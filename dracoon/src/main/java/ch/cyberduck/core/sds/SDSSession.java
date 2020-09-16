@@ -78,6 +78,7 @@ import java.util.regex.Pattern;
 
 import com.dracoon.sdk.crypto.Crypto;
 import com.dracoon.sdk.crypto.error.CryptoException;
+import com.dracoon.sdk.crypto.error.UnknownVersionException;
 import com.dracoon.sdk.crypto.model.UserKeyPair;
 import com.google.api.client.auth.oauth2.PasswordTokenRequest;
 import com.google.api.client.auth.oauth2.TokenResponse;
@@ -321,13 +322,16 @@ public class SDSSession extends HttpSession<SDSApiClient> {
             final List<AlgorithmVersionInfo> keyPairAlgorithms = algorithms.getKeyPairAlgorithms();
             for(AlgorithmVersionInfo kpa : keyPairAlgorithms) {
                 if(kpa.getStatus() == AlgorithmVersionInfo.StatusEnum.REQUIRED) {
-                    return UserKeyPair.Version.valueOf(kpa.getVersion());
+                    return UserKeyPair.Version.getByValue(kpa.getVersion());
                 }
             }
             log.error("No available key pair algorithm with status required found.");
         }
         catch(ApiException e) {
             log.warn(String.format("Ignore failure reading key pair version. %s", new SDSExceptionMappingService().map(e)));
+        }
+        catch(UnknownVersionException e) {
+            log.warn(String.format("Ignore failure reading required key pair algorithm. %s", new TripleCryptExceptionMappingService().map(e)));
         }
         return UserKeyPair.Version.RSA2048;
     }
