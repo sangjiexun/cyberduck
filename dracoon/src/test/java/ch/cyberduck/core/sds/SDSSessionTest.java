@@ -247,5 +247,7 @@ public class SDSSessionTest extends AbstractSDSTest {
         }, new DisabledCancelCallback());
         keyPairs = userApi.requestUserKeyPairs(null, null);
         assertEquals(2, keyPairs.size());
+        assertEquals(UserKeyPair.Version.RSA4096.getValue(), session.keyPair().getPublicKeyContainer().getVersion());
+        assertEquals(UserKeyPair.Version.RSA2048.getValue(), session.keyPairDeprecated().getPublicKeyContainer().getVersion());
     }
 }
