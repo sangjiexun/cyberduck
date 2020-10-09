@@ -19,6 +19,7 @@ import ch.cyberduck.core.Acl;
 import ch.cyberduck.core.Credentials;
 import ch.cyberduck.core.DescriptiveUrl;
 import ch.cyberduck.core.DisabledListProgressListener;
+import ch.cyberduck.core.Host;
 import ch.cyberduck.core.LocaleFactory;
 import ch.cyberduck.core.LoginOptions;
 import ch.cyberduck.core.PasswordCallback;
@@ -117,8 +118,7 @@ public class SDSSharesUrlProvider implements PromptUrlProvider<CreateDownloadSha
     }
 
     @Override
-    public DescriptiveUrl toDownloadUrl(final Path file, CreateDownloadShareRequest options,
-                                        final PasswordCallback callback) throws BackgroundException {
+    public DescriptiveUrl toDownloadUrl(final Path file, CreateDownloadShareRequest options, final PasswordCallback callback) throws BackgroundException {
         try {
             if(log.isDebugEnabled()) {
                 log.debug(String.format("Create download share for %s", file));
@@ -128,20 +128,21 @@ public class SDSSharesUrlProvider implements PromptUrlProvider<CreateDownloadSha
                 log.warn(String.format("Use default share options %s", options));
             }
             final Long fileid = Long.parseLong(nodeid.getFileid(file, new DisabledListProgressListener()));
+            final Host bookmark = session.getHost();
             if(nodeid.isEncrypted(file)) {
                 // get existing file key associated with the sharing user
                 final FileKey key = new NodesApi(session.getClient()).requestUserFileKey(fileid, null, null);
                 final EncryptedFileKey encFileKey = TripleCryptConverter.toCryptoEncryptedFileKey(key);
                 final UserKeyPairContainer keyPairContainer = this.getKeyPairForFileKey(encFileKey);
                 final UserKeyPair userKeyPair = TripleCryptConverter.toCryptoUserKeyPair(keyPairContainer);
-                final Credentials passphrase = new TripleCryptKeyPair().unlock(callback, session.getHost(), userKeyPair);
+                final Credentials passphrase = new TripleCryptKeyPair().unlock(callback, bookmark, userKeyPair);
 
                 final PlainFileKey plainFileKey = Crypto.decryptFileKey(encFileKey, userKeyPair.getUserPrivateKey(), passphrase.getPassword());
                 // encrypt file key with a new key pair
                 final UserKeyPair pair;
                 if(null == options.getPassword()) {
                     pair = Crypto.generateUserKeyPair(session.requiredKeyPairVersion(), callback.prompt(
-                        session.getHost(), LocaleFactory.localizedString("Passphrase", "Cryptomator"),
+                        bookmark, LocaleFactory.localizedString("Passphrase", "Cryptomator"),
                         LocaleFactory.localizedString("Provide additional login credentials", "Credentials"), new LoginOptions().icon(session.getHost().getProtocol().disk())
                     ).getPassword());
                 }
@@ -167,8 +168,8 @@ public class SDSSharesUrlProvider implements PromptUrlProvider<CreateDownloadSha
             }
             return new DescriptiveUrl(
                 URI.create(String.format("%s://%s/#/public/shares-downloads/%s",
-                    session.getHost().getProtocol().getScheme(),
-                    session.getHost().getHostname(),
+                    bookmark.getProtocol().getScheme(),
+                    bookmark.getHostname(),
                     share.getAccessKey())
                 ),
                 DescriptiveUrl.Type.signed, help);
@@ -202,6 +203,7 @@ public class SDSSharesUrlProvider implements PromptUrlProvider<CreateDownloadSha
                 options = new CreateUploadShareRequest();
                 log.warn(String.format("Use default share options %s", options));
             }
+            final Host bookmark = session.getHost();
             final UploadShare share = new SharesApi(session.getClient()).createUploadShare(
                 options.targetId(Long.parseLong(nodeid.getFileid(file, new DisabledListProgressListener()))), StringUtils.EMPTY, null);
             final String help;
@@ -216,8 +218,8 @@ public class SDSSharesUrlProvider implements PromptUrlProvider<CreateDownloadSha
             }
             return new DescriptiveUrl(
                 URI.create(String.format("%s://%s/#/public/shares-uploads/%s",
-                    session.getHost().getProtocol().getScheme(),
-                    session.getHost().getHostname(),
+                    bookmark.getProtocol().getScheme(),
+                    bookmark.getHostname(),
                     share.getAccessKey())
                 ),
                 DescriptiveUrl.Type.signed, help);

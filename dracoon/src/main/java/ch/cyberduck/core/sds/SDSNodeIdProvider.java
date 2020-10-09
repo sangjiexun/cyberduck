@@ -156,10 +156,10 @@ public class SDSNodeIdProvider implements IdProvider {
     }
 
     public ByteBuffer getFileKey() throws BackgroundException {
-        return this.getFileKey(TripleCryptConverter.toSwaggerFileKey(Crypto.generateFileKey(PlainFileKey.Version.AES256GCM)));
+        return this.toBuffer(TripleCryptConverter.toSwaggerFileKey(Crypto.generateFileKey(PlainFileKey.Version.AES256GCM)));
     }
 
-    public ByteBuffer getFileKey(final FileKey fileKey) throws BackgroundException {
+    public ByteBuffer toBuffer(final FileKey fileKey) throws BackgroundException {
         final ObjectWriter writer = session.getClient().getJSON().getContext(null).writerFor(FileKey.class);
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         try {

@@ -59,7 +59,7 @@ public class StoregateMoveFeature implements Move {
             final MoveFileRequest move = new MoveFileRequest()
                 .name(renamed.getName())
                 .parentID(fileid.getFileid(renamed.getParent(), new DisabledListProgressListener()))
-                .mode(MoveFileRequest.ModeEnum.NUMBER_1); // Overwrite
+                .mode(1); // Overwrite
             final HttpEntityEnclosingRequestBase request;
             request = new HttpPost(String.format("%s/v4/files/%s/move", client.getBasePath(), fileid.getFileid(file, new DisabledListProgressListener())));
             if(status.getLockId() != null) {
@@ -90,7 +90,6 @@ public class StoregateMoveFeature implements Move {
 
     @Override
     public boolean isRecursive(final Path source, final Path target) {
-        return false;
+        return true;
     }
-
 }
