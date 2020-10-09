@@ -24,13 +24,22 @@ import ch.cyberduck.core.VersionId;
 import ch.cyberduck.core.exception.BackgroundException;
 import ch.cyberduck.core.features.Bulk;
 import ch.cyberduck.core.features.Delete;
+import ch.cyberduck.core.io.StatusOutputStream;
+import ch.cyberduck.core.io.StreamCopier;
 import ch.cyberduck.core.preferences.PreferencesFactory;
+import ch.cyberduck.core.sds.io.swagger.client.model.FileKey;
+import ch.cyberduck.core.sds.triplecrypt.TripleCryptConverter;
+import ch.cyberduck.core.sds.triplecrypt.TripleCryptExceptionMappingService;
+import ch.cyberduck.core.sds.triplecrypt.TripleCryptOutputStream;
 import ch.cyberduck.core.transfer.Transfer;
 import ch.cyberduck.core.transfer.TransferItem;
 import ch.cyberduck.core.transfer.TransferStatus;
 
+import org.apache.commons.io.output.NullOutputStream;
 import org.apache.log4j.Logger;
 
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -62,7 +71,7 @@ public class SDSEncryptionBulkFeature implements Bulk<Void> {
                     if(rooms.get(container)) {
                         final TransferStatus status = entry.getValue();
                         final FileKey fileKey = TripleCryptConverter.toSwaggerFileKey(Crypto.generateFileKey(PlainFileKey.Version.AES256GCM));
-                        status.setFilekey(nodeid.getFileKey(fileKey));
+                        status.setFilekey(nodeid.toBuffer(fileKey));
                         if(PreferencesFactory.get().getBoolean("sds.upload.s3.enable")) {
                             if(session.configuration().stream().anyMatch(property -> "use_s3_storage".equals(property.getKey()) && String.valueOf(true).equals(property.getValue()))) {
                                 if(entry.getKey().local != null) {
